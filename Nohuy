@@ -1,0 +1,132 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+
+local OldGui = CoreGui:FindFirstChild("Huy367_FarmHub")
+if OldGui then OldGui:Destroy() end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Huy367_FarmHub"
+ScreenGui.Parent = CoreGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 200, 0, 130)
+MainFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+local MenuStroke = Instance.new("UIStroke")
+MenuStroke.Color = Color3.fromRGB(255, 0, 100)
+MenuStroke.Thickness = 2
+MenuStroke.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, 0, 0, 35)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "huy367 Farm Level"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.Parent = MainFrame
+
+local ToggleButton = Instance.new("TextButton")
+ToggleButton.Size = UDim2.new(0, 160, 0, 45)
+ToggleButton.Position = UDim2.new(0.5, -80, 0.55, -5)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+ToggleButton.Text = "Auto Farm: TẮT"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 16
+ToggleButton.Font = Enum.Font.GothamBold
+ToggleButton.Parent = MainFrame
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 8)
+ButtonCorner.Parent = ToggleButton
+
+_G.AutoFarm = false
+
+local function checkTeleport(targetPos)
+    local character = LocalPlayer.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local hrp = character.HumanoidRootPart
+        local distance = (hrp.Position - targetPos.Position).Magnitude
+        local speed = 300 
+        local tweenInfo = TweenInfo.new(distance / speed, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(hrp, tweenInfo, {CFrame = targetPos})
+        tween:Play()
+    end
+end
+
+spawn(function()
+    while wait() do
+        if _G.AutoFarm then
+            pcall(function()
+                local myLevel = LocalPlayer.Data.Level.Value
+                local targetMonster = ""
+                local questName = ""
+                local questId = 1
+                
+                if myLevel >= 1 and myLevel < 10 then
+                    targetMonster = "Bandit"
+                    questName = "BanditQuest1"
+                    questId = 1
+                elseif myLevel >= 10 and myLevel < 15 then
+                    targetMonster = "Monkey"
+                    questName = "JungleQuest"
+                    questId = 1
+                else
+                    targetMonster = "Bandit"
+                end
+
+                local currentQuest = LocalPlayer.PlayerGui.Main.Quest
+                if not currentQuest.Visible then
+                    game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("StartQuest", questName, questId)
+                end
+
+                for _, monster in pairs(workspace.Enemies:GetChildren()) do
+                    if monster.Name == targetMonster and monster:FindFirstChild("HumanoidRootPart") and monster:FindFirstChild("Humanoid") and monster.Humanoid.Health > 0 then
+                        
+                        monster.HumanoidRootPart.CanCollide = false
+                        monster.HumanoidRootPart.Size = Vector3.new(60, 60, 60)
+                        
+                        checkTeleport(monster.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                        
+                        local VirtualUser = game:GetService("VirtualUser")
+                        VirtualUser:CaptureController()
+                        VirtualUser:ClickButton1(Vector2.new(850, 520))
+                        
+                        game:GetService("VirtualUser"):TypeKey("z")
+                        game:GetService("VirtualUser"):TypeKey("x")
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+ToggleButton.MouseButton1Click:Connect(function()
+    _G.AutoFarm = not _G.AutoFarm
+    if _G.AutoFarm then
+        ToggleButton.Text = "Auto Farm: BẬT"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Huy367 Blox Fruits",
+            Text = "Đang tiến hành Auto Farm Level...",
+            Duration = 3
+        })
+    else
+        ToggleButton.Text = "Auto Farm: TẮT"
+        ToggleButton.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+    end
+end)
